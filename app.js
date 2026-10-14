@@ -10,7 +10,29 @@ $('#studentForm').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.t
 $('#adminForm').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/login',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});isAdmin=true;closeModal('adminModal');openModal('adminPanel');loadAdminTests();}catch(err){$('#adminMessage').textContent=err.message}};
 async function init(){try{const s=await api('/api/session');currentStudent=s.student;isAdmin=s.admin;if(currentStudent)updateStudentArea();}catch{}await refreshTests();await loadHtmlTests();}
 async function refreshTests(){try{allTests=await api('/api/tests');renderTests();$('#statTests').textContent=allTests.length;$('#leaderboardSelect').innerHTML='<option value="">Choose a test</option>'+allTests.map(t=>`<option value="${t.id}">${esc(t.title)}</option>`).join('');}catch{$('#testGrid').innerHTML='<div class="empty-state">Could not load tests. Please refresh the page.</div>';}}
-function renderTests(){const q=$('#testSearch').value.toLowerCase();const items=allTests.filter(t=>(activeFilter==='all'||(t.mode||'mock')===activeFilter)&&`${t.title} ${t.subject} ${t.description}`.toLowerCase().includes(q));$('#testGrid').innerHTML=items.length?items.map(t=>`<article class="test-card"><div class="card-top"><span class="subject-pill">${esc(t.subject)}</span><span class="mode-pill">${t.mode==='practice'?'PRACTICE':'MOCK TEST'}</span></div><h3>${esc(t.title)}</h3><p>${esc(t.description||'Build confidence with focused practice and instant feedback.')}</p><div class="test-meta"><span>◷ ${t.duration} min</span><span>☷ ${t.questionCount} questions</span></div><button class="btn primary full" onclick="startTest('${t.id}')">Start test <span>→</span></button></article>`).join(''):'<div class="empty-state">No published tests match this search yet.</div>';}
+function renderTests(){
+const q = $('#testSearch').value.toLowerCase();
+
+const regular = allTests.filter(t =>
+(activeFilter === 'all' || (t.mode || 'mock') === activeFilter) &&
+"${t.title} ${t.subject} ${t.description || ''}".toLowerCase().includes(q)
+);
+
+const html = (htmlTests || []).filter(t =>
+activeFilter === 'all' &&
+"${t.title} HTML practice standalone".toLowerCase().includes(q)
+);
+
+const regularCards = regular.map(t => "<article class="test-card"> <div class="card-top"> <span class="subject-pill">${esc(t.subject)}</span> <span class="mode-pill">${t.mode === 'practice' ? 'PRACTICE' : 'MOCK TEST'}</span> </div> <h3>${esc(t.title)}</h3> <p>${esc(t.description || 'Build confidence with focused practice and instant feedback.')}</p> <div class="test-meta"> <span>◷ ${t.duration} min</span> <span>☷ ${t.questionCount} questions</span> </div> <button class="btn primary full" onclick="startTest('${t.id}')"> Start test → </button> </article>");
+
+const htmlCards = html.map(t => "<article class="test-card"> <div class="card-top"> <span class="subject-pill">HTML PRACTICE</span> <span class="mode-pill">QUICK TEST</span> </div> <h3>${esc(t.title)}</h3> <p>Standalone practice test hosted with Exam Saathi.</p> <div class="test-meta"> <span>HTML file</span> <span>Opens separately</span> </div> <a class="btn outline full" target="_blank" rel="noopener" href="${esc(t.url)}">Open test ↗</a> </article>");
+
+const items = [...regularCards, ...htmlCards];
+
+$('#testGrid').innerHTML = items.length
+? items.join('')
+: '<div class="empty-state">No published tests match this search yet.</div>';
+}
 $('#testSearch').oninput=renderTests; $$('.filter').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.filter;$$('.filter').forEach(x=>x.classList.toggle('active',x===b));renderTests()}); $('#practiceNow').onclick=()=>$('#tests').scrollIntoView({behavior:'smooth'});
 async function loadHtmlTests(){try{const list=await api('/api/html-tests');$('#htmlGrid').innerHTML=list.length?list.map(t=>`<article class="test-card"><div class="card-top"><span class="subject-pill">HTML PRACTICE</span><span class="mode-pill">QUICK TEST</span></div><h3>${esc(t.title)}</h3><p>Standalone practice test hosted with Exam Saathi.</p><div class="test-meta"><span>↗ Opens in new tab</span><span>HTML file</span></div><a class="btn outline full" target="_blank" rel="noopener" href="${esc(t.url)}">Open test ↗</a></article>`).join(''):'<div class="empty-state">No standalone HTML tests added yet. Admin: add .html files to <code>public/html-tests/</code> and redeploy.</div>';}catch{$('#htmlGrid').innerHTML='<div class="empty-state">Standalone tests are temporarily unavailable.</div>';}}
 window.startTest=async testId=>{if(!currentStudent){closeModal('testModal');openModal('authModal');$('#studentMessage').textContent='Login or create a student account to save your results.';return;}try{activeTest=await api('/api/tests/'+testId);answers={};questionIndex=0;attemptKey=crypto.randomUUID();endAt=Date.now()+activeTest.duration*60000;renderQuestion();openModal('testModal');startTimer();}catch(err){alert(err.message)}};
