@@ -26,7 +26,105 @@ async function loadAdminTests(){try{const tests=await api('/api/admin/tests');$(
 $('#createTestForm').onsubmit=async e=>{e.preventDefault();try{await api('/api/admin/tests',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))});e.target.reset();e.target.duration.value=30;$('#createMessage').textContent='Test created as a draft.';loadAdminTests();refreshTests()}catch(err){$('#createMessage').textContent=err.message}};
 window.showQuestionForm=async tid=>{const el=$('#questionForm-'+tid);el.classList.toggle('hidden');if(el.dataset.loaded)return;el.dataset.loaded='1';el.innerHTML=`<h4>Add a question</h4><form class="question-form" onsubmit="addQuestion(event,'${tid}')"><label>Question<textarea name="text" required rows="2"></textarea></label><label>Option A<input name="a" required></label><label>Option B<input name="b" required></label><label>Option C<input name="c"></label><label>Option D<input name="d"></label><label>Correct option<select name="correctIndex"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></label><label>Explanation (optional)<textarea name="explanation" rows="2"></textarea></label><button class="btn primary" type="submit">Save question</button></form><div class="question-list" id="questionList-${tid}"></div>`;loadQuestionList(tid)};
 window.addQuestion=async(e,tid)=>{e.preventDefault();const f=new FormData(e.target), options=['a','b','c','d'].map(k=>String(f.get(k)||'').trim()).filter(Boolean);let correctIndex=Number(f.get('correctIndex'));const original=['a','b','c','d'].indexOf(['a','b','c','d'].filter(k=>f.get(k))[correctIndex]);try{await api(`/api/admin/tests/${tid}/questions`,{method:'POST',body:JSON.stringify({text:f.get('text'),options,correctIndex:original,explanation:f.get('explanation')})});e.target.reset();$('#questionForm-'+tid).dataset.loaded='';loadAdminTests()}catch(err){alert(err.message)}};
-async function loadQuestionList(tid){try{const tests=await api('/api/admin/tests');const t=tests.find(x=>x.id===tid);if(!t)return;const el=$('#questionList-'+tid);el.innerHTML=t.questions? t.questions.map((q,i)=>`<div class="question-list-row"><span>${i+1}. ${esc(q.text)}</span><button class="btn small danger-outline" onclick="deleteQuestion('${tid}','${q.id}')">Remove</button></div>`).join(''):'Questions list unavailable';}catch{}}
+
+async function loadQuestionList(tid) {
+  try {
+    const tests = await api('/api/admin/tests');
+    const test = tests.find(item => item.id === tid);
+    if (!test) return;
+
+    const el = $('#questionList-' + tid);
+
+    el.innerHTML = (test.questions || []).map((q, i) => `
+      <div class="question-list-row">
+        <span>${i + 1}. ${esc(q.text)}</span>
+        <button class="btn small outline"
+          onclick="editQuestion('${tid}','${q.id}')">
+          Edit
+        </button>
+        <button class="btn small danger-outline"
+          onclick="deleteQuestion('${tid}','${q.id}')">
+          Remove
+        </button>
+      </div>
+    `).join('') || '<p>No questions added yet.</p>';
+  } catch (error) {
+    console.error('Could not load questions:', error);
+  }
+}
+
+window.editQuestion = async (tid, qid) => {
+  try {
+    const tests = await api('/api/admin/tests');
+    const test = tests.find(item => item.id === tid);
+    const q = test?.questions?.find(item => item.id === qid);
+
+    if (!q) throw new Error('Question not found.');
+
+    const text = prompt('Question:', q.text);
+    if (text === null) return;
+
+    const optionsText = prompt(
+      'Enter each option on a new line:',
+      q.options.join('\n')
+    );
+    if (optionsText === null) return;
+
+    const options = optionsText
+      .split('\n')
+      .map(option => option.trim())
+      .filter(Boolean);
+
+    if (options.length < 2) {
+      alert('At least two options are required.');
+      return;
+    }
+
+    const oldAnswer = q.correctIndex + 1;
+    const answerText = prompt(
+      `Correct option number (1-${options.length}):`,
+      String(Math.min(oldAnswer, options.length))
+    );
+
+    if (answerText === null) return;
+
+    const correctIndex = Number(answerText) - 1;
+
+    if (
+      !Number.isInteger(correctIndex) ||
+      correctIndex < 0 ||
+      correctIndex >= options.length
+    ) {
+      alert('Invalid correct option number.');
+      return;
+    }
+
+    const explanation = prompt(
+      'Explanation:',
+      q.explanation || ''
+    );
+    if (explanation === null) return;
+
+    await api(
+      `/api/admin/tests/${tid}/questions/${qid}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify({
+          text,
+          options,
+          correctIndex,
+          explanation
+        })
+      }
+    );
+
+    alert('Question updated successfully.');
+    await loadAdminTests();
+  } catch (error) {
+    alert('Could not update question: ' + error.message);
+  }
+};
+
 window.deleteQuestion=async(tid,qid)=>{if(!confirm('Remove this question?'))return;await api(`/api/admin/tests/${tid}/questions/${qid}`,{method:'DELETE'});loadAdminTests()};window.togglePublish=async(tid,published)=>{try{await api(`/api/admin/tests/${tid}/publish`,{method:'POST',body:JSON.stringify({published})});loadAdminTests();refreshTests()}catch(err){alert(err.message)}};window.deleteTest=async tid=>{if(!confirm('Delete this test? Existing result history is retained.'))return;await api('/api/admin/tests/'+tid,{method:'DELETE'});loadAdminTests();refreshTests()};
 $$('[data-admin-tab]').forEach(b=>b.onclick=()=>{$$('[data-admin-tab]').forEach(x=>x.classList.toggle('active',x===b));$('#adminManage').classList.toggle('hidden',b.dataset.adminTab!=='manage');$('#adminResults').classList.toggle('hidden',b.dataset.adminTab!=='results');if(b.dataset.adminTab==='results')loadAdminResults()});
 async function loadAdminResults(){try{const rows=await api('/api/admin/results');$('#adminResultsList').innerHTML=rows.length?`<div class="result-table"><div class="result-table-head"><span>Student</span><span>Test</span><span>Score</span><span>Submitted</span></div>${rows.slice().reverse().map(r=>`<div class="result-table-row"><span>${esc(r.studentName)}</span><span>${esc(r.testTitle)}</span><b>${r.score}/${r.total} (${r.percentage}%)</b><small>${new Date(r.submittedAt).toLocaleString()}</small></div>`).join('')}</div>`:'<div class="empty-state">No student results yet.</div>'}catch(err){$('#adminResultsList').textContent=err.message}}
