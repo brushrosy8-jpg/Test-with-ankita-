@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Saathi - Mock Test 01</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5fb;color:#172033}
+header{background:#164a9c;color:white;padding:22px 15px;text-align:center}
+header h1{margin:0 0 8px}
+.stats{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.stats span{background:#ffffff22;padding:7px 12px;border-radius:8px}
+.sticky{position:sticky;top:0;background:white;padding:12px;display:flex;justify-content:space-between;box-shadow:0 2px 7px #0001;font-weight:bold;z-index:5}
+#timer{color:#c62828}
+main{max-width:850px;margin:20px auto;padding:0 12px}
+.note{background:#fff4d6;padding:12px;border-radius:9px;margin-bottom:15px}
+.question{background:white;padding:17px;margin-bottom:14px;border-radius:12px;border:1px solid #dce3ed}
+.topic{font-size:12px;color:#245ab0;font-weight:bold;margin-bottom:7px}
+.qtext{font-weight:bold;margin-bottom:12px}
+.option{display:block;border:1px solid #dce3ed;padding:11px;margin:8px 0;border-radius:8px;cursor:pointer}
+.option:has(input:checked){background:#eaf1ff;border-color:#245ab0}
+input{accent-color:#245ab0}
+button{padding:13px 18px;border:0;border-radius:8px;font-weight:bold;cursor:pointer;font-size:15px}
+#submit{background:#164a9c;color:white}
+#reset{background:#e2e8f0;color:#172033;margin-left:7px}
+#result{display:none;background:white;padding:18px;border-radius:12px;margin:20px 0}
+#score{font-size:27px;color:#164a9c;font-weight:bold}
+.review{border-top:1px solid #ddd;padding:13px 0}
+.good{color:#137333;font-weight:bold}
+.bad{color:#c62828;font-weight:bold}
+footer{text-align:center;padding:20px;color:#667085;font-size:12px}
+@media(max-width:500px){.question{padding:13px}.sticky{font-size:14px}}
+</style>
+</head>
+<body>
+<header>
+<h1>Exam Saathi</h1>
+<p>Competitive Exams Mock Test — 01</p>
+<div class="stats">
+<span>20 Questions</span><span>20 Minutes</span>
+<span>+2 Correct</span><span>−1 Wrong</span>
+</div>
+</header>
+
+<div class="sticky">
+<span id="progress">Attempted: 0/20</span>
+<span>Time: <span id="timer">20:00</span></span>
+</div>
+
+<main>
+<div class="note">
+<b>निर्देश:</b> सही उत्तर +2 अंक, गलत उत्तर −1 अंक और खाली प्रश्न 0 अंक। अधिकतम अंक 40 हैं। समय समाप्त होने पर टेस्ट अपने आप सबमिट हो जाएगा।
+</div>
+
+<form id="quiz"></form>
+<button id="submit" type="button">Submit Test</button>
+<button id="reset" type="button">Restart</button>
+
+<section id="result">
+<h2>आपका परिणाम</h2>
+<div id="score"></div>
+<p id="summary"></p>
+<h3>Answer Key और Solutions</h3>
+<div id="review"></div>
+</section>
+</main>
+<footer>Exam Saathi • Practice Test • Unofficial mock test</footer>
+
+<script>
+const questions = [
+{
+t:"Coding-Decoding",
+q:"यदि CAT को DBU लिखा जाता है, तो DOG का कूट क्या होगा?",
+o:["EPH","EOG","FPH","DPH"],a:0,
+s:"हर अक्षर में +1: D→E, O→P, G→H। इसलिए DOG = EPH।"
+},
+{
+t:"Coding-Decoding",
+q:"यदि BOOK को CPPL लिखा जाता है, तो PEN कैसे लिखा जाएगा?",
+o:["QFO","QEN","PFN","RFO"],a:0,
+s:"हर अक्षर में एक स्थान आगे: P→Q, E→F, N→O। उत्तर QFO।"
+},
+{
+t:"Coding-Decoding",
+q:"किसी कोड में ROAD को URDG लिखा जाता है। MILK का कोड क्या होगा?",
+o:["PLON","NKMJ","PLNK","OLNM"],a:0,
+s:"हर अक्षर में +3: M→P, I→L, L→O, K→N। उत्तर PLON।"
+},
+{
+t:"Inequality",
+q:"कथन: P > Q ≥ R = S < T. निष्कर्ष: I. P > R  II. T > S",
+o:["केवल I","केवल II","I और II दोनों","कोई नहीं"],a:2,
+s:"P>Q और Q≥R से P>R। S<T से T>S। दोनों निष्कर्ष सही हैं।"
+},
+{
+t:"Inequality",
+q:"A ≥ B > C = D. कौन-सा निष्कर्ष निश्चित है?",
+o:["A > C","B < D","A = C","A < D"],a:0,
+s:"B>C और A≥B है, इसलिए A>B>C। अतः A>C निश्चित है।"
+},
+{
+t:"Inequality",
+q:"X ≤ Y < Z. कौन-सा निष्कर्ष निश्चित है?",
+o:["X < Z","X = Z","X > Z","Y > Z"],a:0,
+s:"X≤Y और Y<Z होने पर X<Z निश्चित है।"
+},
+{
+t:"Ratio and Proportion",
+q:"दो संख्याओं का अनुपात 3:5 है और योग 64 है। छोटी संख्या कितनी है?",
+o:["24","30","32","40"],a:0,
+s:"कुल भाग 8। एक भाग = 64÷8 = 8। छोटी संख्या = 3×8 = 24।"
+},
+{
+t:"Ratio and Proportion",
+q:"यदि x:12 = 5:8, तो x कितना है?",
+o:["6.5","7","7.5","8"],a:2,
+s:"x/12=5/8, इसलिए x=12×5÷8=7.5।"
+},
+{
+t:"Ratio and Proportion",
+q:"₹840 को 3:4 के अनुपात में बाँटा जाए, तो बड़ा हिस्सा कितना होगा?",
+o:["₹360","₹420","₹480","₹520"],a:2,
+s:"कुल भाग 7। एक भाग=840÷7=120। बड़ा हिस्सा=4×120=₹480।"
+},
+{
+t:"Partnership",
+q:"A ने ₹5,000 को 12 महीने और B ने ₹8,000 को 6 महीने निवेश किया। लाभ अनुपात क्या होगा?",
+o:["5:4","4:5","3:2","2:3"],a:0,
+s:"A का निवेश-समय=5000×12=60000। B=8000×6=48000। अनुपात 5:4।"
+},
+{
+t:"Partnership",
+q:"A ने ₹6,000 को 8 महीने और B ने ₹9,000 को 4 महीने लगाया। ₹14,000 लाभ में A का हिस्सा कितना है?",
+o:["₹6,000","₹7,000","₹8,000","₹9,000"],a:2,
+s:"निवेश-समय अनुपात 48000:36000=4:3। A का हिस्सा=14000×4/7=₹8,000।"
+},
+{
+t:"Partnership",
+q:"A और B ने बराबर समय के लिए ₹20,000 और ₹30,000 निवेश किए। कुल लाभ ₹10,000 हो, तो B का हिस्सा?",
+o:["₹4,000","₹5,000","₹6,000","₹7,000"],a:2,
+s:"लाभ अनुपात 20,000:30,000=2:3। B का हिस्सा=10000×3/5=₹6,000।"
+},
+{
+t:"Simplification",
+q:"48 ÷ 6 × 3 + 4 − 5 = ?",
+o:["15","21","23","27"],a:2,
+s:"पहले भाग और गुणा: 48÷6=8, 8×3=24। फिर 24+4−5=23।"
+},
+{
+t:"Simplification",
+q:"√144 + 25% of 80 − 3² = ?",
+o:["21","23","25","27"],a:1,
+s:"√144=12, 25% of 80=20, 3²=9। इसलिए 12+20−9=23।"
+},
+{
+t:"Simplification",
+q:"(18 × 4) ÷ 6 + 7 = ?",
+o:["12","17","19","21"],a:1,
+s:"18×4=72। 72÷6=12। 12+7=19।"
+},
+{
+t:"Wrong Number Series",
+q:"गलत संख्या पहचानिए: 2, 6, 12, 20, 31, 42, 56",
+o:["20","31","42","56"],a:1,
+s:"पैटर्न n(n+1): 2, 6, 12, 20, 30, 42, 56। इसलिए 31 गलत है; वहाँ 30 होना चाहिए।"
+},
+{
+t:"Wrong Number Series",
+q:"गलत संख्या पहचानिए: 3, 7, 15, 31, 62, 127",
+o:["7","31","62","127"],a:2,
+s:"हर पद ×2+1 है: 3, 7, 15, 31, 63, 127। इसलिए 62 गलत है।"
+},
+{
+t:"Wrong Number Series",
+q:"गलत संख्या पहचानिए: 5, 10, 20, 40, 80, 150",
+o:["10","20","80","150"],a:3,
+s:"हर पद दोगुना है: 5, 10, 20, 40, 80, 160। इसलिए 150 गलत है।"
+},
+{
+t:"Syllogism",
+q:"कथन: सभी बिल्लियाँ जानवर हैं। कुछ जानवर कुत्ते हैं। निष्कर्ष: I. सभी बिल्लियाँ जानवर हैं। II. कुछ बिल्लियाँ कुत्ते हैं।",
+o:["केवल I सही","केवल II सही","दोनों सही","कोई नहीं"],a:0,
+s:"निष्कर्ष I कथन से सीधे सही है। कुछ जानवर कुत्ते हैं, इससे यह साबित नहीं होता कि कुछ बिल्लियाँ कुत्ते हैं।"
+},
+{
+t:"Syllogism",
+q:"कथन: सभी पेन स्टेशनरी हैं। कोई स्टेशनरी खाद्य पदार्थ नहीं है। निष्कर्ष: कोई पेन खाद्य पदार्थ नहीं है।",
+o:["निष्कर्ष सही है","निष्कर्ष गलत है","निश्चित नहीं","दोनों संभव"],a:0,
+s:"सभी पेन स्टेशनरी में आते हैं और कोई स्टेशनरी खाद्य पदार्थ नहीं है। इसलिए कोई पेन खाद्य पदार्थ नहीं है।"
+}
+];
+
+const form=document.getElementById("quiz");
+questions.forEach((q,i)=>{
+ const sec=document.createElement("section");
+ sec.className="question";
+ sec.innerHTML=`
+ <div class="topic">प्रश्न ${i+1} • ${q.t}</div>
+ <div class="qtext">${q.q}</div>
+ ${q.o.map((op,j)=>`
+ <label class="option">
+ <input type="radio" name="q${i}" value="${j}">
+ ${String.fromCharCode(65+j)}. ${op}
+ </label>`).join("")}`;
+ form.appendChild(sec);
+});
+
+function updateProgress(){
+ let n=questions.filter((q,i)=>form.querySelector('input[name="q'+i+'"]:checked')).length;
+ document.getElementById("progress").textContent="Attempted: "+n+"/20";
+}
+form.addEventListener("change",updateProgress);
+
+let remaining=1200, finished=false, interval;
+function showTime(){
+ const m=String(Math.floor(remaining/60)).padStart(2,"0");
+ const s=String(remaining%60).padStart(2,"0");
+ document.getElementById("timer").textContent=m+":"+s;
+}
+function finish(){
+ if(finished)return;
+ finished=true;
+ clearInterval(interval);
+ let score=0,correct=0,wrong=0,unanswered=0,review="";
+ questions.forEach((q,i)=>{
+  const chosen=form.querySelector('input[name="q'+i+'"]:checked');
+  if(!chosen) unanswered++;
+  else if(Number(chosen.value)===q.a){score+=2;correct++}
+  else {score-=1;wrong++}
+  const userText=chosen?q.o[Number(chosen.value)]:"उत्तर नहीं दिया";
+  review+=`<div class="review">
+   <b>Q${i+1}. ${q.q}</b><br>
+   आपका उत्तर: <span class="${chosen && Number(chosen.value)===q.a?'good':'bad'}">${userText}</span><br>
+   सही उत्तर: <b>${String.fromCharCode(65+q.a)}. ${q.o[q.a]}</b><br>
+   <b>समाधान:</b> ${q.s}
+  </div>`;
+ });
+ document.getElementById("score").textContent=score+" / 40";
+ document.getElementById("summary").textContent=
+ `सही: ${correct} | गलत: ${wrong} | खाली: ${unanswered} | नेगेटिव मार्किंग: −${wrong} अंक`;
+ document.getElementById("review").innerHTML=review;
+ document.getElementById("result").style.display="block";
+ form.querySelectorAll("input").forEach(x=>x.disabled=true);
+ document.getElementById("submit").disabled=true;
+ document.getElementById("result").scrollIntoView({behavior:"smooth"});
+}
+document.getElementById("submit").addEventListener("click",finish);
+document.getElementById("reset").addEventListener("click",()=>location.reload());
+showTime();
+interval=setInterval(()=>{
+ if(finished)return;
+ remaining--;
+ showTime();
+ if(remaining<=0)finish();
+},1000);
+</script>
+</body>
+</html>
