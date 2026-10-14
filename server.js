@@ -516,6 +516,69 @@ app.post(
   }
 );
 
+/* ---------- Admin: edit existing question ---------- */
+app.put(
+  '/api/admin/tests/:testId/questions/:questionId',
+  adminOnly,
+  (req, res) => {
+    const db = readDB();
+
+    const test = db.tests.find(
+      t => t.id === req.params.testId
+    );
+
+    if (!test) {
+      return res.status(404).json({
+        error: 'Test not found.'
+      });
+    }
+
+    const question = (test.questions || []).find(
+      q => q.id === req.params.questionId
+    );
+
+    if (!question) {
+      return res.status(404).json({
+        error: 'Question not found.'
+      });
+    }
+
+    const text = String(req.body.text || '').trim();
+    const options = Array.isArray(req.body.options)
+      ? req.body.options.map(option => String(option).trim())
+      : [];
+    const correctIndex = Number(req.body.correctIndex);
+    const explanation = String(
+      req.body.explanation || ''
+    ).trim();
+
+    if (
+      !text ||
+      options.length < 2 ||
+      options.some(option => !option) ||
+      !Number.isInteger(correctIndex) ||
+      correctIndex < 0 ||
+      correctIndex >= options.length
+    ) {
+      return res.status(400).json({
+        error: 'Enter a question, at least two options, and a valid correct answer.'
+      });
+    }
+
+    question.text = text;
+    question.options = options;
+    question.correctIndex = correctIndex;
+    question.explanation = explanation;
+
+    writeDB(db);
+
+    return res.json({
+      ok: true,
+      message: 'Question updated successfully.'
+    });
+  }
+);
+
 // ---------- Admin: delete question ----------
 app.delete(
   '/api/admin/tests/:testId/questions/:questionId',
