@@ -78,7 +78,44 @@ const upload = multer({ dest: uploadDir });
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve frontend files stored in the repository root
+app.get('/', (req, res) =>
+    res.sendFile(path.join(__dirname, 'index.html'))
+);
+
+app.get('/index.html', (req, res) =>
+    res.sendFile(path.join(__dirname, 'index.html'))
+);
+
+app.get('/app.js', (req, res) =>
+    res.sendFile(path.join(__dirname, 'app.js'))
+);
+
+app.get('/admin.html', (req, res) =>
+    res.sendFile(path.join(__dirname, 'admin.html'))
+);
+
+app.get('/admin-login.html', (req, res) =>
+    res.sendFile(path.join(__dirname, 'admin-login.html'))
+);
+
+app.get('/test1.html', (req, res) =>
+    res.sendFile(path.join(__dirname, 'test1.html'))
+);
+
+app.get('/styles.css', (req, res) => {
+    const cssPath = path.join(__dirname, 'styles.css');
+
+    if (fs.existsSync(cssPath)) {
+        return res.sendFile(cssPath);
+    }
+
+    res.type('text/css').send('');
+});
+
 
 app.use(session({
     store: new SQLiteStore({ db: 'sessions.db', dir: './data' }),
