@@ -8,14 +8,15 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const AdmZip = require('adm-zip');
-
-constconst upload = multer({
+const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
         fileSize: 5 * 1024 * 1024,
         files: 1
     }
-}); app = express();
+});
+
+const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Database Setup
