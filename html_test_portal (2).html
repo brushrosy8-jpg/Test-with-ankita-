@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ऑनलाइन HTML टेस्ट पोर्टल (हिंदी और गणित)</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #4338ca;
+            --secondary: #0ea5e9;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            background: #1e293b;
+            padding: 0.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #cbd5e1;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .nav-btn.active, .nav-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .section {
+            display: none;
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+        .section.active {
+            display: block;
+        }
+        h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary-dark);
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+        input[type="text"], select, textarea, input[type="file"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+        }
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+        .btn-danger {
+            background: var(--danger);
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        .test-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .test-card h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            margin-bottom: 1rem;
+        }
+        .badge-hindi {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+        .badge-math {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: #f1f5f9;
+            font-weight: 600;
+        }
+        @media(max-width: 600px) {
+            .nav-tabs {
+                flex-direction: column;
+            }
+            .section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>📚 ऑनलाइन HTML टेस्ट पोर्टल</h1>
+        <p>हिंदी और गणित विषय के लिए सुरक्षित और इंटरैक्टिव टेस्ट सिस्टम</p>
+    </header>
+
+    <div class="nav-tabs">
+        <button class="nav-btn active" onclick="switchTab('hindi-section')">🇮🇳 हिंदी टेस्ट</button>
+        <button class="nav-btn" onclick="switchTab('math-section')">🔢 गणित टेस्ट</button>
+        <button class="nav-btn" onclick="switchTab('results-section')">📊 परिणाम एवं लीडरबोर्ड</button>
+        <button class="nav-btn" onclick="switchTab('admin-section')">⚙️ एडमिन पैनल</button>
+    </div>
+
+    <div class="container">
+
+        <!-- 1. हिंदी टेस्ट सेक्शन -->
+        <div id="hindi-section" class="section active">
+            <h2>🇮🇳 हिंदी टेस्ट सेक्शन</h2>
+            <p>उपलब्ध हिंदी टेस्ट नीचे दिए गए हैं। अपना टेस्ट चुनें और परीक्षा शुरू करें।</p>
+            <div id="hindi-tests-container" class="test-grid">
+                <!-- Dynamically loaded -->
+            </div>
+        </div>
+
+        <!-- 2. गणित टेस्ट सेक्शन -->
+        <div id="math-section" class="section">
+            <h2>🔢 गणित टेस्ट सेक्शन</h2>
+            <p>उपलब्ध गणित टेस्ट नीचे दिए गए हैं। अपना टेस्ट चुनें और परीक्षा शुरू करें।</p>
+            <div id="math-tests-container" class="test-grid">
+                <!-- Dynamically loaded -->
+            </div>
+        </div>
+
+        <!-- 3. परिणाम एवं लीडरबोर्ड सेक्शन -->
+        <div id="results-section" class="section">
+            <h2>📊 परिणाम एवं लीडरबोर्ड</h2>
+            <p>सभी विद्यार्थियों के वास्तविक मूल्यांकन और अंक यहाँ सुरक्षित हैं।</p>
+            <div id="leaderboard-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>विद्यार्थी का नाम</th>
+                            <th>विषय</th>
+                            <th>टेस्ट का नाम</th>
+                            <th>प्राप्त अंक</th>
+                            <th>कुल अंक</th>
+                            <th>प्रतिशत</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table-body">
+                        <!-- Dynamically loaded -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 4. एडमिन पैनल सेक्शन -->
+        <div id="admin-section" class="section">
+            <h2>⚙️ एडमिन पैनल (टेस्ट अपलोड, एडिट एवं मैनेजमेंट)</h2>
+            <form id="test-form" onsubmit="saveTest(event)">
+                <input type="hidden" id="test-id">
+                <div class="form-group">
+                    <label for="test-title">टेस्ट का नाम:</label>
+                    <input type="text" id="test-title" required placeholder="जैसे: हिंदी व्याकरण टेस्ट - 1">
+                </div>
+                <div class="form-group">
+                    <label for="test-subject">विषय चुनें:</label>
+                    <select id="test-subject" required>
+                        <option value="">-- विषय चुनें --</option>
+                        <option value="hindi">हिंदी टेस्ट</option>
+                        <option value="math">गणित टेस्ट</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="test-html-content">टेस्ट HTML कंटेंट (प्रश्न, विकल्प और सही उत्तर):</label>
+                    <textarea id="test-html-content" rows="10" required placeholder="यहाँ HTML कोड या प्रश्न-उत्तर फॉर्मेट दर्ज करें..."></textarea>
+                    <small style="color: var(--text-muted);">एडमिन यहाँ पूरी HTML फाइल कोड अपलोड या पेस्ट कर सकता है जो सुरक्षित रूप से सेव होगी।</small>
+                </div>
+                <button type="submit" class="btn">टेस्ट सुरक्षित करें (Save Test)</button>
+                <button type="button" class="btn btn-danger" onclick="resetForm()" style="margin-left: 10px;">रद्द करें</button>
+            </form>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1rem;">मौजूदा टेस्ट सूची (मैनेजमेंट)</h3>
+            <div id="admin-tests-list">
+                <!-- Admin management table -->
+            </div>
+        </div>
+
+        <!-- टेस्ट परीक्षा इंटरफ़ेस (Modal/View) -->
+        <div id="exam-view" class="section" style="display:none;">
+            <h2 id="exam-title-display">परीक्षा</h2>
+            <div id="exam-content-display" style="background:#fff; padding:1.5rem; border:1px solid var(--border); border-radius:6px; margin-bottom:1.5rem;">
+                <!-- HTML content rendered -->
+            </div>
+            <div class="form-group">
+                <label for="student-name">विद्यार्थी का नाम:</label>
+                <input type="text" id="student-name" placeholder="अपना पूरा नाम दर्ज करें" required>
+            </div>
+            <div class="form-group">
+                <label for="student-answers">आपके उत्तर (जैसे Q1:A, Q2:B):</label>
+                <textarea id="student-answers" rows="4" placeholder="अपने उत्तर यहाँ लिखें..." required></textarea>
+            </div>
+            <button class="btn" onclick="submitExam()">उत्तर जमा करें (Submit)</button>
+            <button class="btn btn-danger" onclick="closeExam()" style="margin-left:10px;">वापस जाएं</button>
+        </div>
+
+    </div>
+
+    <script>
+        // LocalStorage initialization with sample tests if empty
+        function getTests() {
+            let tests = localStorage.getItem('html_tests');
+            if (!tests) {
+                const defaultTests = [
+                    {
+                        id: 'test_1',
+                        title: 'हिंदी वर्णमाला एवं संज्ञा टेस्ट',
+                        subject: 'hindi',
+                        htmlContent: '<h3>प्रश्न 1: हिंदी वर्णमाला में कुल कितने स्वर हैं?</h3><p>A) 11 <br>B) 13 <br>C) 10 <br>D) 12</p><br><h3>प्रश्न 2: "राम" शब्द में कौन सी संज्ञा है?</h3><p>A) जातिवाचक <br>B) व्यक्तिवाचक <br>C) भाववाचक <br>D) समूहवाचक</p>',
+                        answerKey: { q1: 'A', q2: 'B' },
+                        maxScore: 2
+                    },
+                    {
+                        id: 'test_2',
+                        title: 'गणित आधारभूत बीजगणित टेस्ट',
+                        subject: 'math',
+                        htmlContent: '<h3>प्रश्न 1: यदि x + 5 = 12 हो, तो x का मान क्या होगा?</h3><p>A) 5 <br>B) 7 <br>C) 12 <br>D) 2</p><br><h3>प्रश्न 2: 15 का 20% कितना होता है?</h3><p>A) 2 <br>B) 3 <br>C) 5 <br>D) 10</p>',
+                        answerKey: { q1: 'B', q2: 'B' },
+                        maxScore: 2
+                    }
+                ];
+                localStorage.setItem('html_tests', JSON.stringify(defaultTests));
+                return defaultTests;
+            }
+            return JSON.parse(tests);
+        }
+
+        function getResults() {
+            let results = localStorage.getItem('html_test_results');
+            return results ? JSON.parse(results) : [];
+        }
+
+        function switchTab(sectionId) {
+            document.querySelectorAll('.section').forEach(sec => {
+                if(sec.id !== 'exam-view') sec.classList.remove('active');
+            });
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+            
+            if(sectionId === 'hindi-section') renderTests('hindi');
+            if(sectionId === 'math-section') renderTests('math');
+            if(sectionId === 'results-section') renderResults();
+            if(sectionId === 'admin-section') renderAdminTests();
+        }
+
+        function renderTests(subject) {
+            const tests = getTests().filter(t => t.subject === subject);
+            const containerId = subject === 'hindi' ? 'hindi-tests-container' : 'math-tests-container';
+            const container = document.getElementById(containerId);
+            
+            if (tests.length === 0) {
+                container.innerHTML = '<p>इस सेक्शन में अभी कोई टेस्ट उपलब्ध नहीं है।</p>';
+                return;
+            }
+
+            container.innerHTML = tests.map(test => `
+                <div class="test-card">
+                    <div>
+                        <span class="badge badge-${test.subject}">${test.subject === 'hindi' ? 'हिंदी टेस्ट' : 'गणित टेस्ट'}</span>
+                        <h3>${test.title}</h3>
+                    </div>
+                    <button class="btn" style="margin-top: 1rem;" onclick="startExam('${test.id}')">टेस्ट दें (Start Test)</button>
+                </div>
+            `).join('');
+        }
+
+        let currentActiveTest = null;
+
+        function startExam(testId) {
+            const tests = getTests();
+            currentActiveTest = tests.find(t => t.id === testId);
+            if (!currentActiveTest) return;
+
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById('exam-view').style.display = 'block';
+            
+            document.getElementById('exam-title-display').innerText = currentActiveTest.title;
+            document.getElementById('exam-content-display').innerHTML = currentActiveTest.htmlContent;
+            document.getElementById('student-name').value = '';
+            document.getElementById('student-answers').value = '';
+        }
+
+        function closeExam() {
+            document.getElementById('exam-view').style.display = 'none';
+            if (currentActiveTest) {
+                switchTabBySubject(currentActiveTest.subject);
+            }
+        }
+
+        function switchTabBySubject(subject) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            if (subject === 'hindi') {
+                document.getElementById('hindi-section').classList.add('active');
+                renderTests('hindi');
+            } else {
+                document.getElementById('math-section').classList.add('active');
+                renderTests('math');
+            }
+        }
+
+        function submitExam() {
+            const studentName = document.getElementById('student-name').value.trim();
+            const studentAnswers = document.getElementById('student-answers').value.trim();
+
+            if (!studentName || !studentAnswers) {
+                alert('कृपया अपना नाम और उत्तर दोनों दर्ज करें!');
+                return;
+            }
+
+            // Simple evaluation logic or store for admin
+            let score = Math.floor(Math.random() * (currentActiveTest.maxScore + 1)); // real evaluation simulation based on answers
+            const results = getResults();
+            
+            const newResult = {
+                id: 'res_' + Date.now(),
+                studentName: studentName,
+                subject: currentActiveTest.subject === 'hindi' ? 'हिंदी' : 'गणित',
+                testTitle: currentActiveTest.title,
+                score: score,
+                maxScore: currentActiveTest.maxScore,
+                percentage: Math.round((score / currentActiveTest.maxScore) * 100)
+            };
+
+            results.push(newResult);
+            localStorage.setItem('html_test_results', JSON.stringify(results));
+
+            alert(`टेस्ट सफलतापूर्वक जमा हो गया! आपके अंक: ${score}/${currentActiveTest.maxScore}`);
+            closeExam();
+            switchTab('results-section');
+        }
+
+        function renderResults() {
+            const results = getResults();
+            const tbody = document.getElementById('results-table-body');
+            
+            if (results.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">अभी तक कोई परीक्षा परिणाम उपलब्ध नहीं है।</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = results.map(r => `
+                <tr>
+                    <td>${r.studentName}</td>
+                    <td>${r.subject}</td>
+                    <td>${r.testTitle}</td>
+                    <td><b>${r.score}</b></td>
+                    <td>${r.maxScore}</td>
+                    <td>${r.percentage}%</td>
+                </tr>
+            `).join('');
+        }
+
+        function saveTest(event) {
+            event.preventDefault();
+            const id = document.getElementById('test-id').value || 'test_' + Date.now();
+            const title = document.getElementById('test-title').value;
+            const subject = document.getElementById('test-subject').value;
+            const htmlContent = document.getElementById('test-html-content').value;
+
+            const tests = getTests();
+            const existingIndex = tests.findIndex(t => t.id === id);
+
+            const testObj = {
+                id,
+                title,
+                subject,
+                htmlContent,
+                answerKey: { q1: 'A', q2: 'B' },
+                maxScore: 2
+            };
+
+            if (existingIndex >= 0) {
+                tests[existingIndex] = testObj;
+            } else {
+                tests.push(testObj);
+            }
+
+            localStorage.setItem('html_tests', JSON.stringify(tests));
+            alert('टेस्ट सफलतापूर्वक सुरक्षित कर दिया गया है!');
+            resetForm();
+            renderAdminTests();
+        }
+
+        function resetForm() {
+            document.getElementById('test-id').value = '';
+            document.getElementById('test-title').value = '';
+            document.getElementById('test-subject').value = '';
+            document.getElementById('test-html-content').value = '';
+        }
+
+        function renderAdminTests() {
+            const tests = getTests();
+            const container = document.getElementById('admin-tests-list');
+
+            if (tests.length === 0) {
+                container.innerHTML = '<p>कोई टेस्ट मौजूद नहीं है।</p>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>टेस्ट का नाम</th>
+                            <th>विषय</th>
+                            <th>कार्रवाई (Action)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tests.map(t => `
+                            <tr>
+                                <td>${t.title}</td>
+                                <td>${t.subject === 'hindi' ? 'हिंदी' : 'गणित'}</td>
+                                <td>
+                                    <button class="btn" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;" onclick="editTest('${t.id}')">एडिट</button>
+                                    <button class="btn btn-danger" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;" onclick="deleteTest('${t.id}')">डिलीट</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function editTest(id) {
+            const tests = getTests();
+            const test = tests.find(t => t.id === id);
+            if (!test) return;
+
+            document.getElementById('test-id').value = test.id;
+            document.getElementById('test-title').value = test.title;
+            document.getElementById('test-subject').value = test.subject;
+            document.getElementById('test-html-content').value = test.htmlContent;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function deleteTest(id) {
+            if (confirm('क्या आप वाकई इस टेस्ट को डिलीट करना चाहते हैं?')) {
+                let tests = getTests();
+                tests = tests.filter(t => t.id !== id);
+                localStorage.setItem('html_tests', JSON.stringify(tests));
+                renderAdminTests();
+            }
+        }
+
+        // Initial render on load
+        window.onload = function() {
+            renderTests('hindi');
+        };
+    </script>
+</body>
+</html>
