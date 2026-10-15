@@ -37,16 +37,74 @@ $('#testSearch').oninput=renderTests; $$('.filter').forEach(b=>b.onclick=()=>{ac
 async function loadHtmlTests(){
   try {
     htmlTests = await api('/api/html-tests');
-    renderTests();
+    
+function renderTests() {
+  const searchInput = $('#testSearch');
+  const q = (searchInput?.value || '').toLowerCase().trim();
 
-    $('#htmlGrid').innerHTML = htmlTests.length
-      ? '<div class="empty-state">HTML tests are also listed in All Tests above.</div>'
-      : '<div class="empty-state">No standalone HTML tests added yet. Admin: add .html files to public/html-tests/ and redeploy.</div>';
-  } catch {
-    $('#htmlGrid').innerHTML =
-      '<div class="empty-state">Standalone tests are temporarily unavailable.</div>';
-  }
+  const regular = allTests.filter(t =>
+    (activeFilter === 'all' ||
+      (t.mode || 'mock') === activeFilter) &&
+    `${t.title || ''} ${t.subject || ''} ${t.description || ''}`
+      .toLowerCase()
+      .includes(q)
+  );
+
+  const html = (htmlTests || []).filter(t =>
+    activeFilter === 'all' &&
+    `${t.title || ''} HTML practice standalone`
+      .toLowerCase()
+      .includes(q)
+  );
+
+  const regularCards = regular.map(t => `
+    <article class="test-card">
+      <div class="card-top">
+        <span class="subject-pill">${esc(t.subject || 'General')}</span>
+        <span class="mode-pill">
+          ${t.mode === 'practice' ? 'PRACTICE' : 'MOCK TEST'}
+        </span>
+      </div>
+      <h3>${esc(t.title || 'Untitled Test')}</h3>
+      <p>${esc(t.description ||
+        'Build confidence with focused practice and instant feedback.')}</p>
+      <div class="test-meta">
+        <span>◷ ${Number(t.duration) || 20} min</span>
+        <span>☷ ${Number(t.questionCount) || 0} questions</span>
+      </div>
+      <button class="btn primary full"
+        onclick="startTest('${esc(t.id)}')">
+        Start test →
+      </button>
+    </article>
+  `);
+
+  const htmlCards = html.map(t => `
+    <article class="test-card">
+      <div class="card-top">
+        <span class="subject-pill">HTML PRACTICE</span>
+        <span class="mode-pill">QUICK TEST</span>
+      </div>
+      <h3>${esc(t.title || 'HTML Practice Test')}</h3>
+      <p>Standalone practice test hosted with Exam Saathi.</p>
+      <div class="test-meta">
+        <span>HTML file</span>
+        <span>Opens separately</span>
+      </div>
+      <a class="btn outline full"
+        target="_blank"
+        rel="noopener"
+        href="${esc(t.url)}">Open test ↗</a>
+    </article>
+  `);
+
+  const items = [...regularCards, ...htmlCards];
+
+  $('#testGrid').innerHTML = items.length
+    ? items.join('')
+    : '<div class="empty-state">No published tests match this search yet.</div>';
 }
+
 window.startTest=async testId=>{if(!currentStudent){closeModal('testModal');openModal('authModal');$('#studentMessage').textContent='Login or create a student account to save your results.';return;}try{activeTest=await api('/api/tests/'+testId);answers={};questionIndex=0;attemptKey=crypto.randomUUID();endAt=Date.now()+activeTest.duration*60000;renderQuestion();openModal('testModal');startTimer();}catch(err){alert(err.message)}};
 function startTimer(){clearInterval(timerId);const tick=()=>{const left=Math.max(0,Math.ceil((endAt-Date.now())/1000));const el=$('#examTimer');if(el)el.textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`;if(left<=0){clearInterval(timerId);submitTest(true)}};tick();timerId=setInterval(tick,1000)}
 function renderQuestion(){const q=activeTest.questions[questionIndex];$('#testStage').innerHTML=`<div class="exam-top"><div><span class="eyebrow">${esc(activeTest.subject)}</span><h2>${esc(activeTest.title)}</h2></div><div class="timer-box"><small>TIME LEFT</small><strong id="examTimer">--:--</strong></div></div><div class="exam-progress"><span>Question ${questionIndex+1} of ${activeTest.questions.length}</span><div><i style="width:${(questionIndex+1)/activeTest.questions.length*100}%"></i></div></div><div class="exam-layout"><section class="question-area"><div class="question-label">QUESTION ${questionIndex+1}</div><h3>${esc(q.text)}</h3><div class="option-list">${q.options.map((o,i)=>`<button class="option ${answers[q.id]===i?'selected':''}" onclick="selectAnswer(${i})"><span class="option-letter">${String.fromCharCode(65+i)}</span><span>${esc(o)}</span><span class="option-check">${answers[q.id]===i?'✓':''}</span></button>`).join('')}</div><div class="question-actions"><button class="btn outline" onclick="clearAnswer()">Clear response</button><button class="btn outline" onclick="markReview()">⚑ Mark for review</button></div><div class="exam-bottom"><button class="btn outline" ${questionIndex===0?'disabled':''} onclick="moveQuestion(-1)">← Previous</button><button class="btn primary" onclick="${questionIndex===activeTest.questions.length-1?'confirmSubmit()':'moveQuestion(1)'}">${questionIndex===activeTest.questions.length-1?'Submit test':'Save & next →'}</button></div></section><aside class="question-palette"><h4>Question palette</h4><p>${Object.keys(answers).length} answered · ${activeTest.questions.length-Object.keys(answers).length} unanswered</p><div class="palette-grid">${activeTest.questions.map((x,i)=>`<button class="palette ${i===questionIndex?'current':''} ${answers[x.id]!==undefined?'answered':''} ${x.review?'review':''}" onclick="goQuestion(${i})">${i+1}</button>`).join('')}</div><div class="palette-legend"><span><i class="legend-answered"></i> Answered</span><span><i class="legend-review"></i> Review</span><span><i class="legend-empty"></i> Unanswered</span></div><button class="btn danger full" onclick="confirmSubmit()">Submit test</button></aside></div>`;}
