@@ -25,7 +25,25 @@ activeFilter === 'all' &&
 
 const regularCards = regular.map(t => "<article class="test-card"> <div class="card-top"> <span class="subject-pill">${esc(t.subject)}</span> <span class="mode-pill">${t.mode === 'practice' ? 'PRACTICE' : 'MOCK TEST'}</span> </div> <h3>${esc(t.title)}</h3> <p>${esc(t.description || 'Build confidence with focused practice and instant feedback.')}</p> <div class="test-meta"> <span>◷ ${t.duration} min</span> <span>☷ ${t.questionCount} questions</span> </div> <button class="btn primary full" onclick="startTest('${t.id}')"> Start test → </button> </article>");
 
-const htmlCards = html.map(t => "<article class="test-card"> <div class="card-top"> <span class="subject-pill">HTML PRACTICE</span> <span class="mode-pill">QUICK TEST</span> </div> <h3>${esc(t.title)}</h3> <p>Standalone practice test hosted with Exam Saathi.</p> <div class="test-meta"> <span>HTML file</span> <span>Opens separately</span> </div> <a class="btn outline full" target="_blank" rel="noopener" href="${esc(t.url)}">Open test ↗</a> </article>");
+
+const htmlCards = html.map(t => `
+  <article class="test-card">
+    <div class="card-top">
+      <span class="subject-pill">HTML PRACTICE</span>
+      <span class="mode-pill">QUICK TEST</span>
+    </div>
+    <h3>${esc(t.title)}</h3>
+    <p>Standalone practice test hosted with Exam Saathi.</p>
+    <div class="test-meta">
+      <span>HTML file</span>
+      <span>Opens separately</span>
+    </div>
+    <a class="btn outline full"
+       target="_blank"
+       rel="noopener"
+       href="${esc(t.url)}">Open test ↗</a>
+  </article>
+`);
 
 const items = [...regularCards, ...htmlCards];
 
