@@ -220,7 +220,7 @@ app.post('/api/admin/html-tests', requireAdmin, (req, res) => {
     });
 });
 app.get('/api/html-tests', (req, res) => {
-    const htmlTestsDir = path.join(__dirname, 'public', 'html-tests');
+    const htmlTestsDir = path.join(__dirname, 'html-tests');
     fs.readdir(htmlTestsDir, (err, files) => {
         if (err) {
             return res.json([]);
