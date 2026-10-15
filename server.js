@@ -181,53 +181,93 @@ app.post('/api/admin/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// HTML Tests API (Requirement 5)
-// Admin HTML Test Upload
-app.post('/api/admin/html-tests', requireAdmin, (req, res) => {
-    const { title, filename, html } = req.body || {};
+// HTML and ZIP Test Upload API
+app.post(
+    '/api/admin/html-tests',
+    requireAdmin,
+    upload.single('file'),
+    (req, res) => {
+        try {
+            const title = (req.body.title || '').trim();
+            const file = req.file;
 
-    if (!title || !filename || typeof html !== 'string') {
-        return res.status(400).json({ error: 'टेस्ट का नाम और HTML फ़ाइल आवश्यक है।' });
-    }
-
-    if (!filename.toLowerCase().endsWith('.html')) {
-        return res.status(400).json({ error: 'केवल HTML फ़ाइल स्वीकार है।' });
-    }
-
-    if (Buffer.byteLength(html, 'utf8') > 1500000) {
-        return res.status(413).json({ error: 'फ़ाइल बहुत बड़ी है। छोटी HTML फ़ाइल चुनें।' });
-    }
-
-    const safeName = filename
-        .replace(/\.html$/i, '')
-        .replace(/[^a-zA-Z0-9_-]/g, '-')
-        .slice(0, 60) || 'test';
-
-    const htmlTestsDir = path.join(__dirname, 'html-tests');
-
-    fs.mkdir(htmlTestsDir, { recursive: true }, (dirErr) => {
-        if (dirErr) {
-            return res.status(500).json({ error: 'फ़ोल्डर नहीं बन पाया।' });
-        }
-
-        const filePath = path.join(
-            htmlTestsDir,
-            `${Date.now()}-${safeName}.html`
-        );
-
-        fs.writeFile(filePath, html, 'utf8', (err) => {
-            if (err) {
-                return res.status(500).json({ error: 'फ़ाइल सेव नहीं हुई।' });
+            if (!title || !file) {
+                return res.status(400).json({
+                    error: 'टेस्ट का नाम और फ़ाइल आवश्यक है।'
+                });
             }
 
-            res.json({
-                success: true,
-                message: 'HTML फ़ाइल सेव हो गई।',
-                title
+            let htmlBuffer;
+            let filename = file.originalname;
+
+            if (/\.zip$/i.test(filename)) {
+                const zip = new AdmZip(file.buffer);
+                const entries = zip.getEntries().filter(entry =>
+                    !entry.isDirectory &&
+                    /\.html?$/i.test(entry.entryName)
+                );
+
+                if (entries.length !== 1) {
+                    return res.status(400).json({
+                        error: 'ZIP में केवल एक HTML फ़ाइल होनी चाहिए।'
+                    });
+                }
+
+                htmlBuffer = entries[0].getData();
+                filename = path.basename(entries[0].entryName);
+            } else if (/\.html?$/i.test(filename)) {
+                htmlBuffer = file.buffer;
+            } else {
+                return res.status(400).json({
+                    error: 'केवल HTML या ZIP फ़ाइल स्वीकार है।'
+                });
+            }
+
+            if (htmlBuffer.length > 1500000) {
+                return res.status(413).json({
+                    error: 'HTML फ़ाइल 1.5 MB से छोटी होनी चाहिए।'
+                });
+            }
+
+            const safeName = filename
+                .replace(/\.html?$/i, '')
+                .replace(/[^a-zA-Z0-9_-]/g, '-')
+                .slice(0, 60) || 'test';
+
+            const dir = path.join(__dirname, 'html-tests');
+
+            fs.mkdir(dir, { recursive: true }, err => {
+                if (err) {
+                    return res.status(500).json({
+                        error: 'फ़ोल्डर नहीं बन पाया।'
+                    });
+                }
+
+                const savedName = `${Date.now()}-${safeName}.html`;
+                const filePath = path.join(dir, savedName);
+
+                fs.writeFile(filePath, htmlBuffer, err => {
+                    if (err) {
+                        return res.status(500).json({
+                            error: 'फ़ाइल सेव नहीं हुई।'
+                        });
+                    }
+
+                    res.json({
+                        success: true,
+                        message: 'टेस्ट अपलोड हो गया।',
+                        title,
+                        filename: savedName
+                    });
+                });
             });
-        });
-    });
-});
+        } catch (err) {
+            res.status(400).json({
+                error: 'ZIP/HTML फ़ाइल पढ़ी नहीं जा सकी।'
+            });
+        }
+    }
+);
 app.get('/api/html-tests', (req, res) => {
     const htmlTestsDir = path.join(__dirname, 'html-tests');
     fs.readdir(htmlTestsDir, (err, files) => {
