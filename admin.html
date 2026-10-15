@@ -221,52 +221,59 @@
             await fetch('/api/admin/logout', { method: 'POST' });
             window.location.href = '/admin-login.html';
         }
-        document.getElementById('html-upload-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
+        
+document.getElementById('html-upload-form').addEventListener('submit', async function(event) {
+    event.preventDefault();
 
-            const fileInput = document.getElementById('html-test-file');
-            const title = document.getElementById('html-test-title').value.trim();
-            const message = document.getElementById('html-upload-message');
-            const file = fileInput.files[0];
+    const fileInput = document.getElementById('html-test-file');
+    const title = document.getElementById('html-test-title').value.trim();
+    const message = document.getElementById('html-upload-message');
+    const file = fileInput.files[0];
 
-            if (!file || !title) {
-                message.textContent = 'टेस्ट का नाम और HTML फ़ाइल चुनें।';
-                return;
-            }
+    if (!file || !title) {
+        message.textContent = 'टेस्ट का नाम और फ़ाइल चुनें।';
+        return;
+    }
 
-            if (!file.name.toLowerCase().endsWith('.html')) {
-                message.textContent = 'केवल .html फ़ाइल चुनें।';
-                return;
-            }
+    const name = file.name.toLowerCase();
+    if (!name.endsWith('.html') &&
+        !name.endsWith('.htm') &&
+        !name.endsWith('.zip')) {
+        message.textContent = 'केवल HTML या ZIP फ़ाइल चुनें।';
+        return;
+    }
 
-            try {
-                message.textContent = 'अपलोड हो रहा है...';
+    if (file.size > 5 * 1024 * 1024) {
+        message.textContent = 'फ़ाइल 5 MB से छोटी होनी चाहिए।';
+        return;
+    }
 
-                const html = await file.text();
+    try {
+        message.textContent = 'अपलोड हो रहा है...';
 
-                const response = await fetch('/api/admin/html-tests', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: title,
-                        filename: file.name,
-                        html: html
-                    })
-                });
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('file', file);
 
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'अपलोड विफल हुआ।');
-                }
-
-                message.textContent = 'फ़ाइल सर्वर पर सेव हो गई।';
-                document.getElementById('html-upload-form').reset();
-
-            } catch (error) {
-                message.textContent = 'त्रुटि: ' + error.message;
-            }
+        const response = await fetch('/api/admin/html-tests', {
+            method: 'POST',
+            body: formData
         });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'अपलोड विफल हुआ।');
+        }
+
+        message.textContent = '✅ ' + (result.message || 'टेस्ट अपलोड हो गया।');
+        document.getElementById('html-upload-form').reset();
+
+    } catch (error) {
+        message.textContent = 'त्रुटि: ' + error.message;
+    }
+});
+
         loadAdminData();
     </script>
 </body>
