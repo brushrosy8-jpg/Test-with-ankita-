@@ -173,6 +173,52 @@ app.post('/api/admin/logout', (req, res) => {
 });
 
 // HTML Tests API (Requirement 5)
+// Admin HTML Test Upload
+app.post('/api/admin/html-tests', requireAdmin, (req, res) => {
+    const { title, filename, html } = req.body || {};
+
+    if (!title || !filename || typeof html !== 'string') {
+        return res.status(400).json({ error: 'टेस्ट का नाम और HTML फ़ाइल आवश्यक है।' });
+    }
+
+    if (!filename.toLowerCase().endsWith('.html')) {
+        return res.status(400).json({ error: 'केवल HTML फ़ाइल स्वीकार है।' });
+    }
+
+    if (Buffer.byteLength(html, 'utf8') > 1500000) {
+        return res.status(413).json({ error: 'फ़ाइल बहुत बड़ी है। छोटी HTML फ़ाइल चुनें।' });
+    }
+
+    const safeName = filename
+        .replace(/\.html$/i, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '-')
+        .slice(0, 60) || 'test';
+
+    const htmlTestsDir = path.join(__dirname, 'html-tests');
+
+    fs.mkdir(htmlTestsDir, { recursive: true }, (dirErr) => {
+        if (dirErr) {
+            return res.status(500).json({ error: 'फ़ोल्डर नहीं बन पाया।' });
+        }
+
+        const filePath = path.join(
+            htmlTestsDir,
+            `${Date.now()}-${safeName}.html`
+        );
+
+        fs.writeFile(filePath, html, 'utf8', (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'फ़ाइल सेव नहीं हुई।' });
+            }
+
+            res.json({
+                success: true,
+                message: 'HTML फ़ाइल सेव हो गई।',
+                title
+            });
+        });
+    });
+});
 app.get('/api/html-tests', (req, res) => {
     const htmlTestsDir = path.join(__dirname, 'public', 'html-tests');
     fs.readdir(htmlTestsDir, (err, files) => {
