@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>स्टेटिक HTML प्रैक्टिस टेस्ट - Test with Ankita</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div class="max-w-3xl mx-auto p-4 sm:p-6">
+        <header class="bg-white rounded-xl shadow-md p-6 mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-indigo-600">प्रैक्टिस टेस्ट 1 (HTML Test)</h1>
+                <p class="text-sm text-gray-500">सामान्य ज्ञान एवं कंप्यूटर ज्ञान</p>
+            </div>
+            <a href="/" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-medium">← होम पर लौटें</a>
+        </header>
+
+        <div id="test-container" class="bg-white rounded-xl shadow-md p-6 space-y-6">
+            <div class="question-box">
+                <h3 class="font-semibold text-lg text-gray-800 mb-3">प्रश्नों की सूची:</h3>
+                <div class="space-y-4">
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <p class="font-medium text-gray-700 mb-2">1. भारत की राजधानी क्या है?</p>
+                        <label class="block text-sm text-gray-600"><input type="radio" name="q1" value="A"> ए) मुंबई</label>
+                        <label class="block text-sm text-gray-600"><input type="radio" name="q1" value="B"> बी) नई दिल्ली</label>
+                        <label class="block text-sm text-gray-600"><input type="radio" name="q1" value="C"> सी) कोलकाता</label>
+                    </div>
+                    <div class="p-4 border rounded-lg bg-gray-50">
+                        <p class="font-medium text-gray-700 mb-2">2. कंप्यूटर का मस्तिष्क किसे कहा जाता है?</p>
+                        <label class="block text-sm text-gray-600"><input type="radio" name="q2" value="A"> ए) सीपीयू (CPU)</label>
+                        <label class="block text-sm text-gray-600"><input type="radio" name="q2" value="B"> बी) मॉनिटर</label>
+                        <label class="block text-sm text-gray-600"><input type="radio" name="q2" value="C"> सी) कीबोर्ड</label>
+                    </div>
+                </div>
+            </div>
+            <button onclick="submitStaticTest()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow">टेस्ट सबमिट करें</button>
+            <div id="result-box" class="hidden p-4 bg-green-50 border border-green-200 text-green-800 rounded-xl font-medium text-center"></div>
+        </div>
+    </div>
+    <script>
+        function submitStaticTest() {
+            let score = 0;
+            const q1 = document.querySelector('input[name="q1"]:checked');
+            const q2 = document.querySelector('input[name="q2"]:checked');
+            if(q1 && q1.value === 'B') score += 2;
+            if(q2 && q2.value === 'A') score += 2;
+            const res = document.getElementById('result-box');
+            res.classList.remove('hidden');
+            res.innerText = `आपका स्कोर: ${score} / 4 अंक`;
+        }
+    </script>
+</body>
+</html>
