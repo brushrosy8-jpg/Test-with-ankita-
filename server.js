@@ -1,4 +1,3 @@
-
 const express = require('express');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);
@@ -12,402 +11,141 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Database Setup
-const dbDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-const dbPath = path.join(dbDir, 'database.db');
+const ROOT_DIR = __dirname;
+const DATA_DIR = path.join(ROOT_DIR, 'data');
+const UPLOAD_DIR = path.join(ROOT_DIR, 'uploads');
+const HTML_TESTS_DIR = path.join(ROOT_DIR, 'public', 'html-tests');
+
+for (const dir of [DATA_DIR, UPLOAD_DIR, HTML_TESTS_DIR]) {
+  fs.mkdirSync(dir, { recursive: true });
+}
+
+// Database
+const dbPath = path.join(DATA_DIR, 'database.db');
 const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error('Database connection error:', err.message);
-    else console.log('Connected to SQLite database.');
+  if (err) console.error('Database connection error:', err.message);
+  else console.log('Connected to SQLite database:', dbPath);
 });
 
-// Initialize Tables
+db.run('PRAGMA foreign_keys = ON');
+
+// Initialize tables
 db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+  db.run(`CREATE TABLE IF NOT EXISTS students (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS tests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        subject TEXT DEFAULT 'गणित',
-        duration INTEGER DEFAULT 20,
-        marks_correct INTEGER DEFAULT 2,
-        marks_incorrect INTEGER DEFAULT 1,
-        published BOOLEAN DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+  db.run(`CREATE TABLE IF NOT EXISTS tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    subject TEXT DEFAULT 'गणित',
+    duration INTEGER DEFAULT 20,
+    marks_correct INTEGER DEFAULT 2,
+    marks_incorrect INTEGER DEFAULT 1,
+    published BOOLEAN DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS questions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        test_id INTEGER,
-        question TEXT NOT NULL,
-        option_a TEXT NOT NULL,
-        option_b TEXT NOT NULL,
-        option_c TEXT NOT NULL,
-        option_d TEXT NOT NULL,
-        correct_answer TEXT NOT NULL,
-        explanation TEXT,
-        FOREIGN KEY(test_id) REFERENCES tests(id) ON DELETE CASCADE
-    )`);
+  db.run(`CREATE TABLE IF NOT EXISTS questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    test_id INTEGER,
+    question TEXT NOT NULL,
+    option_a TEXT NOT NULL,
+    option_b TEXT NOT NULL,
+    option_c TEXT NOT NULL,
+    option_d TEXT NOT NULL,
+    correct_answer TEXT NOT NULL,
+    explanation TEXT,
+    FOREIGN KEY(test_id) REFERENCES tests(id) ON DELETE CASCADE
+  )`);
 
-    db.run(`CREATE TABLE IF NOT EXISTS results (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id INTEGER,
-        student_name TEXT,
-        test_id INTEGER,
-        subject TEXT,
-        score INTEGER,
-        correct_count INTEGER,
-        incorrect_count INTEGER,
-        unanswered_count INTEGER,
-        percentage REAL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY(student_id) REFERENCES students(id)
-    )`);
+  db.run(`CREATE TABLE IF NOT EXISTS results (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id INTEGER,
+    student_name TEXT,
+    test_id INTEGER,
+    subject TEXT,
+    score INTEGER,
+    correct_count INTEGER,
+    incorrect_count INTEGER,
+    unanswered_count INTEGER,
+    percentage REAL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(student_id) REFERENCES students(id)
+  )`);
 });
-
-// Multer Upload Setup
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-const upload = multer({ dest: uploadDir });
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.set('trust proxy', 1);
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve frontend files stored in the repository root
-app.get('/', (req, res) =>
-    res.sendFile(path.join(__dirname, 'index.html'))
-);
-
-app.get('/index.html', (req, res) =>
-    res.sendFile(path.join(__dirname, 'index.html'))
-);
-
-app.get('/app.js', (req, res) =>
-    res.sendFile(path.join(__dirname, 'app.js'))
-);
-
-app.get('/admin.html', (req, res) =>
-    res.sendFile(path.join(__dirname, 'admin.html'))
-);
-
-app.get('/admin-login.html', (req, res) =>
-    res.sendFile(path.join(__dirname, 'admin-login.html'))
-);
-
-app.get('/test1.html', (req, res) =>
-    res.sendFile(path.join(__dirname, 'test1.html'))
-);
-
-app.get('/styles.css', (req, res) => {
-    const cssPath = path.join(__dirname, 'styles.css');
-
-    if (fs.existsSync(cssPath)) {
-        return res.sendFile(cssPath);
-    }
-
-    res.type('text/css').send('');
-});
-
-
+// Session: SESSION_SECRET should be configured in Render Environment
 app.use(session({
-    store: new SQLiteStore({ db: 'sessions.db', dir: './data' }),
-    secret: process.env.SESSION_SECRET || 'test-with-ankita-secret-key-2026',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true, secure: false }
+  store: new SQLiteStore({
+    db: 'sessions.db',
+    dir: DATA_DIR
+  }),
+  secret: process.env.SESSION_SECRET ||
+    'test-with-ankita-secret-key-2026-change-this',
+  resave: false,
+  saveUninitialized: false,
+  rolling: true,
+  cookie: {
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
 }));
 
 function requireStudent(req, res, next) {
-    if (req.session && req.session.studentId) next();
-    else res.status(401).json({ error: 'लॉगिन आवश्यक है (Unauthorized)' });
+  if (req.session && req.session.studentId) {
+    return next();
+  }
+
+  return res.status(401).json({
+    error: 'लॉगिन आवश्यक है। कृपया लॉगिन करें।'
+  });
 }
 
 function requireAdmin(req, res, next) {
-    if (req.session && req.session.isAdmin) next();
-    else res.status(401).json({ error: 'एडमिन लॉगिन आवश्यक है' });
+  if (req.session && req.session.isAdmin) {
+    return next();
+  }
+
+  return res.status(401).json({
+    error: 'एडमिन लॉगिन आवश्यक है।'
+  });
 }
 
-// Student Auth API
-app.post('/api/auth/register', async (req, res) => {
-    const { name, password } = req.body;
-    if (!name || !password) return res.status(400).json({ error: 'नाम और पासवर्ड आवश्यक हैं' });
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        db.run(`INSERT INTO students (name, password) VALUES (?, ?)`, [name, hashedPassword], function(err) {
-            if (err) {
-                if (err.message.includes('UNIQUE')) return res.status(400).json({ error: 'यह नाम पहले से रजिस्टर्ड है।' });
-                return res.status(500).json({ error: 'डेटाबेस त्रुटि' });
-            }
-            req.session.studentId = this.lastID;
-            req.session.studentName = name;
-            res.json({ success: true, user: { id: this.lastID, name } });
-        });
-    } catch(e) { res.status(500).json({ error: 'सर्वर त्रुटि' }); }
-});
+function saveSession(req, res, payload) {
+  req.session.save((err) => {
+    if (err) {
+      console.error('Session save error:', err);
 
-app.post('/api/auth/login', (req, res) => {
-    const { name, password } = req.body;
-    db.get(`SELECT * FROM students WHERE name = ?`, [name], async (err, student) => {
-        if (err || !student) return res.status(400).json({ error: 'अमान्य नाम या पासवर्ड' });
-        const match = await bcrypt.compare(password, student.password);
-        if (match) {
-            req.session.studentId = student.id;
-            req.session.studentName = student.name;
-            res.json({ success: true, user: { id: student.id, name: student.name } });
-        } else {
-            res.status(400).json({ error: 'अमान्य नाम या पासवर्ड' });
-        }
-    });
-});
-
-app.post('/api/auth/logout', (req, res) => {
-    req.session.destroy(() => { res.json({ success: true }); });
-});
-
-app.get('/api/auth/me', (req, res) => {
-    if (req.session && req.session.studentId) res.json({ user: { id: req.session.studentId, name: req.session.studentName } });
-    else res.status(401).json({ error: 'Not authenticated' });
-});
-
-// Admin Auth API
-app.post('/api/admin/login', (req, res) => {
-    const { username, password } = req.body;
-    const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
-    if (username === adminUser && password === adminPass) {
-        req.session.isAdmin = true;
-        res.json({ success: true });
-    } else {
-        res.status(401).json({ error: 'अमान्य एडमिन क्रेडेंशियल्स' });
-    }
-});
-
-app.post('/api/admin/logout', (req, res) => {
-    req.session.isAdmin = false;
-    res.json({ success: true });
-});
-
-// HTML Tests API
-app.get('/api/html-tests', (req, res) => {
-    const htmlTestsDir = path.join(__dirname, 'public', 'html-tests');
-    fs.readdir(htmlTestsDir, (err, files) => {
-        if (err) return res.json([]);
-        const htmlFiles = files.filter(file => file.endsWith('.html')).map(file => ({
-            name: file.replace('.html', '').replace(/[-_]/g, ' ').toUpperCase(),
-            filename: file,
-            url: `/html-tests/${file}`
-        }));
-        res.json(htmlFiles);
-    });
-});
-
-// Tests API
-app.get('/api/tests', requireStudent, (req, res) => {
-    db.all(`SELECT id, title, subject, duration, marks_correct, marks_incorrect FROM tests WHERE published = 1`, [], (err, rows) => {
-        if (err) return res.status(500).json({ error: 'DB error' });
-        res.json(rows);
-    });
-});
-
-app.get('/api/tests/:id', requireStudent, (req, res) => {
-    const testId = req.params.id;
-    db.get(`SELECT * FROM tests WHERE id = ? AND published = 1`, [testId], (err, test) => {
-        if (err || !test) return res.status(404).json({ error: 'टेस्ट नहीं मिला' });
-        db.all(`SELECT id, question, option_a, option_b, option_c, option_d FROM questions WHERE test_id = ?`, [testId], (err, questions) => {
-            if (err) return res.status(500).json({ error: 'DB error' });
-            res.json({ test, questions });
-        });
-    });
-});
-
-// Submit Test API
-app.post('/api/tests/submit', requireStudent, (req, res) => {
-    const { test_id, answers } = req.body;
-    const studentId = req.session.studentId;
-    const studentName = req.session.studentName;
-
-    db.get(`SELECT * FROM tests WHERE id = ? AND published = 1`, [test_id], (err, test) => {
-        if (err || !test) return res.status(404).json({ error: 'अमान्य टेस्ट' });
-
-        db.all(`SELECT * FROM questions WHERE test_id = ?`, [test_id], (err, questions) => {
-            if (err) return res.status(500).json({ error: 'DB error' });
-
-            let score = 0;
-            let correctCount = 0;
-            let incorrectCount = 0;
-            let unansweredCount = 0;
-            const plus = test.marks_correct || 2;
-            const minus = test.marks_incorrect || 1;
-
-            questions.forEach(q => {
-                const userAns = answers[q.id];
-                const correctAnswer = q.correct_answer;
-                if (!userAns) unansweredCount++;
-                else if (userAns === correctAnswer) {
-                    score += plus;
-                    correctCount++;
-                } else {
-                    score -= minus;
-                    incorrectCount++;
-                }
-            });
-
-            const maxScore = questions.length * plus;
-            const percentage = maxScore > 0 ? ((score / maxScore) * 100).toFixed(1) : 0;
-
-            db.run(
-                `INSERT INTO results (student_id, student_name, test_id, subject, score, correct_count, incorrect_count, unanswered_count, percentage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [studentId, studentName, test_id, test.subject, score, correctCount, incorrectCount, unansweredCount, percentage],
-                function(err) {
-                    if (err) console.error(err);
-                    res.json({ success: true, score, maxScore, percentage, correct_count: correctCount, incorrect_count: incorrectCount, unanswered_count: unansweredCount });
-                }
-            );
-        });
-    });
-});
-
-app.get('/api/my-results', requireStudent, (req, res) => {
-    const studentId = req.session.studentId;
-    db.all(`SELECT * FROM results WHERE student_id = ? ORDER BY created_at DESC`, [studentId], (err, rows) => {
-        if (err) return res.status(500).json({ error: 'DB error' });
-        res.json(rows);
-    });
-});
-
-// Leaderboard API
-app.get('/api/leaderboard', requireStudent, (req, res) => {
-    const type = req.query.type || 'overall';
-    let query = '';
-    let params = [];
-
-    if (type === 'overall') {
-        query = `SELECT student_name, SUM(score) as total_score, COUNT(*) as attempts FROM results GROUP BY student_name ORDER BY total_score DESC LIMIT 50`;
-    } else {
-        query = `SELECT student_name, SUM(score) as total_score, COUNT(*) as attempts FROM results WHERE subject = ? GROUP BY student_name ORDER BY total_score DESC LIMIT 50`;
-        params = [type];
+      return res.status(500).json({
+        error: 'लॉगिन सेशन सेव नहीं हो पाया। कृपया दोबारा प्रयास करें।'
+      });
     }
 
-    db.all(query, params, (err, rows) => {
-        if (err) return res.status(500).json({ error: 'DB error' });
-        res.json(rows);
-    });
-});
+    res.json(payload);
+  });
+}
 
-// Admin API Routes
-app.get('/api/admin/data', requireAdmin, (req, res) => {
-    db.get(`SELECT COUNT(*) as count FROM students`, [], (err, studentRow) => {
-        db.all(`SELECT * FROM tests ORDER BY created_at DESC`, [], (err, tests) => {
-            db.all(`SELECT * FROM results ORDER BY created_at DESC`, [], (err, results) => {
-                res.json({ studentCount: studentRow ? studentRow.count : 0, tests, results });
-            });
-        });
-    });
-});
+// Frontend files
+app.use(express.static(path.join(ROOT_DIR, 'public')));
 
-app.post('/api/admin/tests', requireAdmin, (req, res) => {
-    const { title, subject, duration } = req.body;
-    db.run(`INSERT INTO tests (title, subject, duration, published) VALUES (?, ?, ?, 0)`, [title, subject || 'गणित', duration || 20], function(err) {
-        if (err) return res.status(500).json({ error: 'DB error' });
-        res.json({ success: true, id: this.lastID });
-    });
-});
+app.get('/', (req, res) =>
+  res.sendFile(path.join(ROOT_DIR, 'index.html'))
+);
 
-app.put('/api/admin/tests/:id/publish', requireAdmin, (req, res) => {
-    const testId = req.params.id;
-    const { published } = req.body;
-    db.run(`UPDATE tests SET published = ? WHERE id = ?`, [published ? 1 : 0, testId], (err) => {
-        if (err) return res.status(500).json({ error: 'DB error' });
-        res.json({ success: true });
-    });
-});
+app.get('/index.html', (req, res) =>
+  res.sendFile(path.join(ROOT_DIR, 'index.html'))
+);
 
-app.delete('/api/admin/tests/:id', requireAdmin, (req, res) => {
-    const testId = req.params.id;
-    db.run(`DELETE FROM tests WHERE id = ?`, [testId], (err) => {
-        db.run(`DELETE FROM questions WHERE test_id = ?`, [testId], () => {
-            res.json({ success: true });
-        });
-    });
-});
-
-app.post('/api/admin/questions', requireAdmin, (req, res) => {
-    const { test_id, question, option_a, option_b, option_c, option_d, correct_answer, explanation } = req.body;
-    db.run(
-        `INSERT INTO questions (test_id, question, option_a, option_b, option_c, option_d, correct_answer, explanation) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [test_id, question, option_a, option_b, option_c, option_d, correct_answer, explanation],
-        (err) => {
-            if (err) return res.status(500).json({ error: 'DB error' });
-            res.json({ success: true });
-        }
-    );
-});
-
-// ZIP Importer API
-app.post('/api/admin/upload-zip', requireAdmin, upload.single('testZip'), (req, res) => {
-    if (!req.file) return res.status(400).json({ error: 'कोई फ़ाइल अपलोड नहीं की गई' });
-    const { subject, duration } = req.body;
-    try {
-        const zip = new AdmZip(req.file.path);
-        const zipEntries = zip.getEntries();
-        let questionsData = null;
-
-        zipEntries.forEach(entry => {
-            if (entry.entryName.endsWith('questions.json')) {
-                questionsData = JSON.parse(entry.getData().toString('utf8'));
-            }
-        });
-
-        if (!questionsData || !Array.isArray(questionsData)) {
-            fs.unlinkSync(req.file.path);
-            return res.status(400).json({ error: 'ZIP में questions.json नहीं मिला या अमान्य है।' });
-        }
-
-        const testTitle = 'इम्पोर्टेड मॉक टेस्ट - ' + Date.now().toString().slice(-4);
-        db.run(`INSERT INTO tests (title, subject, duration, published) VALUES (?, ?, ?, 0)`, [testTitle, subject || 'गणित', duration || 20], function(err) {
-            if (err) {
-                fs.unlinkSync(req.file.path);
-                return res.status(500).json({ error: 'DB error creating test' });
-            }
-            const testId = this.lastID;
-            const stmt = db.prepare(`INSERT INTO questions (test_id, question, option_a, option_b, option_c, option_d, correct_answer, explanation) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
-            
-            questionsData.forEach(q => {
-                stmt.run(testId, q.question, q.option_a, q.option_b, q.option_c, q.option_d, q.correct_answer || 'A', q.explanation || '');
-            });
-            stmt.finalize();
-
-            fs.unlinkSync(req.file.path);
-            res.json({ success: true, testId, title: testTitle });
-        });
-    } catch(e) {
-        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        res.status(500).json({ error: 'ZIP प्रोसेसिंग त्रुटि' });
-    }
-});
-
-// CSV Export API
-app.get('/api/admin/results/csv', requireAdmin, (req, res) => {
-    db.all(`SELECT * FROM results ORDER BY created_at DESC`, [], (err, rows) => {
-        if (err) return res.status(500).send('DB error');
-        let csv = 'ID,Student Name,Test ID,Subject,Score,Correct,Incorrect,Unanswered,Percentage,Date\n';
-        rows.forEach(r => {
-            csv += `${r.id},"${r.student_name}",${r.test_id},"${r.subject || 'गणित'}",${r.score},${r.correct_count},${r.incorrect_count},${r.unanswered_count},${r.percentage}%,"${r.created_at}"\n`;
-        });
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', 'attachment; filename="test-with-ankita-results.csv"');
-        res.send(csv);
-    });
-});
-
-app.listen(PORT, () => {
-    console.log(`Test with Ankita server running on port ${PORT}`);
-});
+app.get('/app.js', (req, res) =>
+  res.send
