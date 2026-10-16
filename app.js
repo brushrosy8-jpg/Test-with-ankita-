@@ -221,7 +221,10 @@ function renderTests(serverTests, htmlTests, subject) {
     const query = (document.getElementById('test-search')?.value || '').toLowerCase();
 
     let filteredServer = serverTests.filter(t => (subject === 'all' || t.subject === subject) && t.title.toLowerCase().includes(query));
-    let filteredHtml = htmlTests.filter(h => h.name.toLowerCase().includes(query));
+    let filteredHtml = htmlTests.filter(h =>
+    (subject === 'all' || h.subject === subject || h.subject === 'all') &&
+    h.name.toLowerCase().includes(query)
+);
 
     let htmlOutput = '';
 
