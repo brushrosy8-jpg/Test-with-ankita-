@@ -244,20 +244,19 @@ function renderTests(serverTests, htmlTests, subject) {
         `;
     });
 
-    if (subject === 'all') {
-        filteredHtml.forEach(h => {
-            htmlOutput += `
-                <div class="bg-white rounded-2xl shadow-md p-6 border flex flex-col justify-between space-y-4">
-                    <div>
-                        <span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-semibold">HTML टेस्ट</span>
-                        <h3 class="font-bold text-lg text-slate-800 mt-2">${h.name}</h3>
-                        <p class="text-sm text-slate-500 mt-1">स्टेटिक प्रैक्टिस टेस्ट फ़ाइल</p>
-                    </div>
-                    <a href="${h.url}" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-center font-semibold rounded-xl shadow transition block">ओपन टेस्ट (Open)</a>
+
+    filteredHtml.forEach(h => {
+        htmlOutput += `
+            <div class="bg-white rounded-2xl shadow-md p-6 border flex flex-col justify-between space-y-4">
+                <div>
+                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-semibold">HTML टेस्ट</span>
+                    <h3 class="font-bold text-lg text-slate-800 mt-2">${h.name}</h3>
+                    <p class="text-sm text-slate-500 mt-1">स्टेटिक प्रैक्टिस टेस्ट फ़ाइल</p>
                 </div>
-            `;
-        });
-    }
+                <a href="${h.url}" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-center font-semibold rounded-xl shadow transition block">ओपन टेस्ट (Open)</a>
+            </div>
+        `;
+    });
 
     grid.innerHTML = htmlOutput || '<p class="text-slate-500 col-span-full text-center py-10">कोई टेस्ट नहीं मिला।</p>';
 }
