@@ -600,6 +600,8 @@ fs.rename(req.file.path, newPath, (renameErr) => {
   });
 });
  }); 
+});
+
 // Published database tests
 app.get('/api/tests', requireStudent, (req, res) => {
   db.all(
