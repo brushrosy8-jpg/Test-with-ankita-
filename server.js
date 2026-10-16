@@ -594,11 +594,11 @@ fs.rename(req.file.path, newPath, (renameErr) => {
         filename: newFilename,
         subject,
         url: '/html-tests/' + encodeURIComponent(newFilename)
-      });
-    });
+          });
   });
 });
-
+  });
+});
 
 // Published database tests
 app.get('/api/tests', requireStudent, (req, res) => {
