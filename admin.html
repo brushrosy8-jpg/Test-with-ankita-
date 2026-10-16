@@ -61,6 +61,25 @@
             </form>
         </div>
 
+        <!-- Upload individual HTML test -->
+        <div class="bg-white p-6 rounded-xl shadow border space-y-4">
+            <h2 class="text-lg font-bold text-slate-800">📄 HTML टेस्ट अपलोड करें</h2>
+            <p class="text-sm text-slate-600">अपनी .html टेस्ट फ़ाइल चुनें और अपलोड करें।</p>
+
+            <form id="upload-html-form" onsubmit="uploadHtmlTest(event)">
+                <input type="file" id="html-test-file"
+                       accept=".html,text/html" required
+                       class="w-full text-sm border rounded-lg p-2 mb-3">
+
+                <button id="upload-html-button" type="submit"
+                        class="py-2.5 px-4 bg-indigo-600 text-white font-semibold rounded-lg">
+                    HTML टेस्ट अपलोड करें
+                </button>
+            </form>
+
+            <p id="html-upload-status" class="text-sm"></p>
+        </div>
+
         <!-- Create Test Manually -->
         <div class="bg-white p-6 rounded-xl shadow border space-y-4">
             <h2 class="text-lg font-bold text-slate-800">नया टेस्ट मैन्युअल बनाएं</h2>
@@ -104,6 +123,47 @@
     </main>
 
     <script>
+        
+        async function uploadHtmlTest(event) {
+            event.preventDefault();
+
+            const input = document.getElementById('html-test-file');
+            const status = document.getElementById('html-upload-status');
+            const button = document.getElementById('upload-html-button');
+            const file = input.files[0];
+
+            if (!file || !file.name.toLowerCase().endsWith('.html')) {
+                status.textContent = 'कृपया .html फ़ाइल चुनें।';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('htmlTest', file);
+
+            button.disabled = true;
+            status.textContent = 'अपलोड हो रहा है...';
+
+            try {
+                const response = await fetch('/api/admin/upload-html', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'अपलोड विफल हुआ।');
+                }
+
+                status.textContent = 'अपलोड सफल! विद्यार्थी वाले पेज पर जाँचें।';
+                input.value = '';
+            } catch (error) {
+                status.textContent = 'त्रुटि: ' + error.message;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
         async function loadAdminData() {
             try {
                 const res = await fetch('/api/admin/data');
