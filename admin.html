@@ -150,7 +150,8 @@
             }
 
             const formData = new FormData();
-            formData.append('htmlTest', file);
+            formData.append('subject', document.getElementById('html-test-subject').value);
+formData.append('htmlTest', file);
 
             button.disabled = true;
             status.textContent = 'अपलोड हो रहा है...';
