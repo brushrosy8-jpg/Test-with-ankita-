@@ -714,7 +714,52 @@ app.post('/api/tests/submit', requireStudent, (req, res) => {
     }
   );
 });
+// Save uploaded HTML test result
+app.post('/api/html-tests/submit', requireStudent, (req, res) => {
+  const score = Number(req.body.score);
+  const maxScore = Number(req.body.maxScore);
+  const subject = String(req.body.subject || 'सामान्य ज्ञान');
 
+  if (
+    !Number.isFinite(score) ||
+    !Number.isFinite(maxScore) ||
+    maxScore <= 0 ||
+    score < 0 ||
+    score > maxScore
+  ) {
+    return res.status(400).json({
+      error: 'स्कोर सही नहीं है।'
+    });
+  }
+
+  const percentage = Math.round((score / maxScore) * 100);
+
+  db.run(
+    `INSERT INTO results
+    (student_id, student_name, test_id, subject, score,
+     correct_count, incorrect_count, unanswered_count, percentage)
+    VALUES (?, ?, NULL, ?, ?, 0, 0, 0, ?)`,
+    [
+      req.session.studentId,
+      req.session.studentName || 'विद्यार्थी',
+      subject,
+      score,
+      percentage
+    ],
+    function (err) {
+      if (err) {
+        return res.status(500).json({
+          error: 'परिणाम सेव नहीं हुआ।'
+        });
+      }
+
+      res.json({
+        success: true,
+        resultId: this.lastID
+      });
+    }
+  );
+});
 // Student's results
 app.get('/api/my-results', requireStudent, (req, res) => {
   db.all(
