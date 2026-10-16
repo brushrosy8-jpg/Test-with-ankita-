@@ -415,13 +415,28 @@ app.get('/api/html-tests', requireStudent, (req, res) => {
         }
       })
       .sort((a, b) => a.localeCompare(b))
-      .map((file) => ({
-        name: path.basename(file, '.html')
-          .replace(/[-_]+/g, ' ')
-          .trim(),
-        filename: file,
-        url: `/html-tests/${encodeURIComponent(file)}`
-      }));
+      
+.map((file) => {
+  const match = file.match(/^(math|hindi|reasoning)__(.+)\.html$/i);
+
+  const subjectMap = {
+    math: 'गणित',
+    hindi: 'हिंदी',
+    reasoning: 'रीजनिंग'
+  };
+
+  const subject = match ? subjectMap[match[1].toLowerCase()] : 'all';
+  const displayName = match ? match[2] : file.replace(/\.html$/i, '');
+
+  return {
+    name: displayName
+      .replace(/[-_]+/g, ' ')
+      .trim(),
+    filename: file,
+    subject,
+    url: `/html-tests/${encodeURIComponent(file)}`
+  };
+});
 
     res.json(htmlFiles);
   });
