@@ -482,14 +482,36 @@ app.post('/api/admin/upload-html', requireAdmin, (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      message: 'HTML टेस्ट अपलोड हो गया।',
-      filename: req.file.filename,
-      url: `/html-tests/${encodeURIComponent(req.file.filename)}`
-    });
+    
+const allowedSubjects = ['गणित', 'हिंदी', 'रीजनिंग'];
+const subject = allowedSubjects.includes(req.body.subject)
+  ? req.body.subject
+  : 'गणित';
+
+const prefix = {
+  'गणित': 'math',
+  'हिंदी': 'hindi',
+  'रीजनिंग': 'reasoning'
+}[subject];
+
+const newFilename = `${prefix}__${req.file.filename}`;
+const newPath = path.join(HTML_TESTS_DIR, newFilename);
+
+fs.rename(req.file.path, newPath, (renameErr) => {
+  if (renameErr) {
+    console.error(renameErr);
+    return res.status(500).json({ error: 'फ़ाइल सेव नहीं हो पाई।' });
+  }
+
+  res.json({
+    success: true,
+    message: 'HTML टेस्ट अपलोड हो गया।',
+    filename: newFilename,
+    subject,
+    url: `/html-tests/${encodeURIComponent(newFilename)}`
   });
 });
+
 
 // Published database tests
 app.get('/api/tests', requireStudent, (req, res) => {
