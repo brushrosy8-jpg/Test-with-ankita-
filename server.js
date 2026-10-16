@@ -512,19 +512,45 @@ const prefix = {
 const newFilename = `${prefix}__${req.file.filename}`;
 const newPath = path.join(HTML_TESTS_DIR, newFilename);
 
-fs.rename(req.file.path, newPath, (renameErr) => {
-  if (renameErr) {
-    console.error(renameErr);
-    return res.status(500).json({ error: 'फ़ाइल सेव नहीं हो पाई।' });
-  }
 
-  res.json({
-    success: true,
-    message: 'HTML टेस्ट अपलोड हो गया।',
-    filename: newFilename,
-    subject,
-    url: `/html-tests/${encodeURIComponent(newFilename)}`
+
+    fs.rename(req.file.path, newPath, (renameErr) => {
+      if (renameErr) {
+        console.error(renameErr);
+        return res.status(500).json({
+          error: 'फ़ाइल सेव नहीं हो पाई।'
+        });
+      }
+
+      res.json({
+        success: true,
+        message: 'HTML टेस्ट अपलोड हो गया।',
+        filename: newFilename,
+        subject,
+        url: `/html-tests/${encodeURIComponent(newFilename)}`
+      });
+    });
   });
+});
+
+// Published database tests
+app.get('/api/tests', requireStudent, (req, res) => {
+  db.all(
+    `SELECT id, title, subject, duration, marks_correct, marks_incorrect
+     FROM tests
+     WHERE published = 1
+     ORDER BY created_at DESC`,
+    [],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({
+          error: 'डेटाबेस त्रुटि।'
+        });
+      }
+
+      res.json(rows || []);
+    }
+  );
 });
 
 
