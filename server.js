@@ -577,8 +577,8 @@ fs.rename(req.file.path, newPath, (renameErr) => {
 })();
 </script>`;
 
-    const updatedHtml = /<\\/body\\s*>/i.test(html)
-      ? html.replace(/<\\/body\\s*>/i, reportScript + '</body>')
+    const updatedHtml = /<\/body\s*>/i.test(html)
+  ? html.replace(/<\/body\s*>/i, reportScript + '</body>')
       : html + reportScript;
 
     fs.writeFile(newPath, updatedHtml, 'utf8', (writeErr) => {
