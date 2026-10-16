@@ -514,11 +514,77 @@ const newPath = path.join(HTML_TESTS_DIR, newFilename);
 
 
 
-    fs.rename(req.file.path, newPath, (renameErr) => {
-      if (renameErr) {
-        console.error(renameErr);
+    
+fs.rename(req.file.path, newPath, (renameErr) => {
+  if (renameErr) {
+    console.error(renameErr);
+    return res.status(500).json({
+      error: 'फ़ाइल सेव नहीं हो पाई।'
+    });
+  }
+
+  fs.readFile(newPath, 'utf8', (readErr, html) => {
+    if (readErr) {
+      return res.status(500).json({
+        error: 'HTML टेस्ट पढ़ा नहीं जा सका।'
+      });
+    }
+
+    const reportScript = `
+<script>
+(function () {
+  const originalFetch = window.fetch.bind(window);
+
+  function saveHtmlTestResult(score, maxScore) {
+    if (window.__examSaathiSaved) return;
+    window.__examSaathiSaved = true;
+
+    originalFetch('/api/html-tests/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        score: score,
+        maxScore: maxScore,
+        subject: ${JSON.stringify(subject)}
+      })
+    }).catch(function () {
+      window.__examSaathiSaved = false;
+    });
+  }
+
+  function inspectResult() {
+    const box = document.getElementById('result-box');
+    if (!box || box.hidden || box.style.display === 'none') return;
+
+    const text = box.innerText || box.textContent || '';
+    const match = text.match(/स्कोर\\s*:\\s*(-?\\d+)\\s*\\/\\s*(\\d+)/i);
+
+    if (match) {
+      saveHtmlTestResult(Number(match[1]), Number(match[2]));
+    }
+  }
+
+  new MutationObserver(inspectResult).observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+    attributes: true
+  });
+
+  document.addEventListener('click', function () {
+    setTimeout(inspectResult, 300);
+  });
+})();
+</script>`;
+
+    const updatedHtml = /<\\/body\\s*>/i.test(html)
+      ? html.replace(/<\\/body\\s*>/i, reportScript + '</body>')
+      : html + reportScript;
+
+    fs.writeFile(newPath, updatedHtml, 'utf8', (writeErr) => {
+      if (writeErr) {
         return res.status(500).json({
-          error: 'फ़ाइल सेव नहीं हो पाई।'
+          error: 'HTML टेस्ट अपडेट नहीं हो पाया।'
         });
       }
 
@@ -527,11 +593,12 @@ const newPath = path.join(HTML_TESTS_DIR, newFilename);
         message: 'HTML टेस्ट अपलोड हो गया।',
         filename: newFilename,
         subject,
-        url: `/html-tests/${encodeURIComponent(newFilename)}`
+        url: '/html-tests/' + encodeURIComponent(newFilename)
       });
     });
   });
 });
+
 
 // Published database tests
 app.get('/api/tests', requireStudent, (req, res) => {
